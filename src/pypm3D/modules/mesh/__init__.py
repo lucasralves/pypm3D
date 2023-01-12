@@ -1,1 +1,1 @@
-from pypm3D.modules.mesh.external import proc_mesh
+from pypm3D.modules.mesh.core.proc_mesh import proc_mesh
