@@ -408,13 +408,14 @@ Vec3D vel_source_sheet(int n_sides, Vec3D p, Vec3D e1, Vec3D e2, Vec3D e3, Vec3D
 /*-------------------------------------------
     Calculate a_ij coefs
 --------------------------------------------*/
-void get_a_ij_coefs(int nf,
-                    int n_sides[],
-                    double p_avg[],
-                    double p_ctrl[],
-                    double e1[], double e2[], double e3[],
-                    double p1[], double p2[], double p3[], double p4[],
-                    double a_ij_x[], double a_ij_y[], double a_ij_z[])
+void get_a_j_coefs(int nf,
+                   int n_sides[],
+                   double p_avg[],
+                   double p_ctrl[],
+                   double e1[], double e2[], double e3[],
+                   double p1[], double p2[], double p3[], double p4[],
+                   double source[],
+                   double a_j_x[], double a_j_y[], double a_j_z[])
 {
     int i, j;
 
@@ -427,6 +428,10 @@ void get_a_ij_coefs(int nf,
 
     for (i = 0; i < nf; i++)
     {
+
+        a_j_x[i] = 0.0;
+        a_j_y[i] = 0.0;
+        a_j_z[i] = 0.0;
 
         for (j = 0; j < nf; j++)
         {
@@ -446,65 +451,65 @@ void get_a_ij_coefs(int nf,
 
             vel_source = vel_source_sheet(n_sides_j, p_ij, e1_j, e2_j, e3_j, p1_j, p2_j, p3_j, p4_j);
 
-            a_ij_x[i * nf + j] = vel_source.x;
-            a_ij_y[i * nf + j] = vel_source.y;
-            a_ij_z[i * nf + j] = vel_source.z;
-        
+            a_j_x[i] = a_j_x[i] + source[j] * vel_source.x;
+            a_j_y[i] = a_j_y[i] + source[j] * vel_source.y;
+            a_j_z[i] = a_j_z[i] + source[j] * vel_source.z;
+
         }
     }
 
 }
 
 /*-------------------------------------------
-    Calculate b_kj coefs
+    Calculate b_ij coefs
 --------------------------------------------*/
-void get_b_kj_coefs(int nf,
-                    int nte,
-                    int faces[],
+void get_b_ij_coefs(int nf,
                     double vertices[],
-                    double scale[],
+                    int faces[],
                     double p_ctrl[],
-                    double b_kj_x[], double b_kj_y[], double b_kj_z[])
+                    double b_ij_x[], double b_ij_y[], double b_ij_z[])
 {
     int i, j;
 
-    int id1, id2, id3, id4;
-
-    Vec3D vel1, vel2, vel3, vel4;
+    int sides, id1, id2, id3, id4;
     Vec3D p, p1, p2, p3, p4;
+    Vec3D vel1, vel2, vel3, vel4;
 
     for (i = 0; i < nf; i++)
     {
 
-        p.x = p_ctrl[3 * i];
-        p.y = p_ctrl[3 * i + 1];
-        p.z = p_ctrl[3 * i + 2];
+        p.x = p_ctrl[3 * i]; p.y = p_ctrl[3 * i + 1]; p.z = p_ctrl[3 * i + 2];
 
-        for (j = 0; j < nte; j++)
+        for (j = 0; j < nf; j++)
         {
 
-            id1 = faces[j * 5 + 1]; id2 = faces[j * 5 + 2]; id3 = faces[j * 5 + 3];
+            sides = faces[5 * j];
+            id1 = faces[5 * j + 1]; id2 = faces[5 * j + 2]; id3 = faces[5 * j + 3]; id4 = faces[5 * j + 4];
+
             p1.x = vertices[3 * id1]; p1.y = vertices[3 * id1 + 1]; p1.z = vertices[3 * id1 + 2];
             p2.x = vertices[3 * id2]; p2.y = vertices[3 * id2 + 1]; p2.z = vertices[3 * id2 + 2];
             p3.x = vertices[3 * id3]; p3.y = vertices[3 * id3 + 1]; p3.z = vertices[3 * id3 + 2];
 
-            if (faces[j * 5] == 3) {
-                vel1 = line_vortex(p, p1, p2);
-                vel2 = line_vortex(p, p2, p3);
-                vel3 = line_vortex(p, p3, p1);
-                vel4.x = 0.0; vel4.y = 0.0; vel4.z = 0.0;
-            } else {
-                id4 = faces[j * 5 + 4];
-                p4.x = vertices[3 * id4]; p4.y = vertices[3 * id4 + 1]; p4.z = vertices[3 * id4 + 2];
-                vel1 = line_vortex(p, p1, p2);
-                vel2 = line_vortex(p, p2, p3);
+            vel1 = line_vortex(p, p1, p2);
+            vel2 = line_vortex(p, p2, p3);
+
+            if (sides == 4) {
+
+                p3.x = vertices[3 * id3]; p3.y = vertices[3 * id3 + 1]; p3.z = vertices[3 * id3 + 2];
+
                 vel3 = line_vortex(p, p3, p4);
                 vel4 = line_vortex(p, p4, p1);
+
+            } else {
+
+                vel3 = line_vortex(p, p3, p1);
+                vel4.x = 0.0; vel4.y = 0.0; vel4.z = 0.0;
+
             }
 
-            b_kj_x[i * nte + j] = scale[j] * (vel1.x + vel2.x + vel3.x + vel4.x);
-            b_kj_y[i * nte + j] = scale[j] * (vel1.y + vel2.y + vel3.y + vel4.y);
-            b_kj_z[i * nte + j] = scale[j] * (vel1.z + vel2.z + vel3.z + vel4.z);
+            b_ij_x[i * nf + j] = vel1.x + vel2.x + vel3.x + vel4.x;
+            b_ij_y[i * nf + j] = vel1.y + vel2.y + vel3.y + vel4.y;
+            b_ij_z[i * nf + j] = vel1.z + vel2.z + vel3.z + vel4.z;
         
         }
     }
@@ -512,131 +517,227 @@ void get_b_kj_coefs(int nf,
 }
 
 /*-------------------------------------------
-    Calculate c_kj and d_j coefs
+    Calculate b_ij coefs
 --------------------------------------------*/
-void get_c_kj_vortex_line_coefs(int nf,
-                                int nte,
-                                int te[],
-                                double vertices[],
-                                double scale[],
-                                double p_ctrl[],
-                                double c_kj_x[], double c_kj_y[], double c_kj_z[])
+void get_c_kj_coefs(int nf,
+                    int nte,
+                    double vertices[],
+                    int trailing_edge[],
+                    double p_ctrl[],
+                    double c_kj_x[], double c_kj_y[], double c_kj_z[])
 {
-    int i, j;
+    int i, k;
 
     int id1, id2;
-
-    Vec3D vel;
     Vec3D p, p1, p2;
+    Vec3D vel;
 
     for (i = 0; i < nf; i++)
     {
 
-        p.x = p_ctrl[3 * i];
-        p.y = p_ctrl[3 * i + 1];
-        p.z = p_ctrl[3 * i + 2];
+        p.x = p_ctrl[3 * i]; p.y = p_ctrl[3 * i + 1]; p.z = p_ctrl[3 * i + 2];
 
-        for (j = 0; j < nte; j++)
+        for (k = 0; k < nte; k++)
         {
-            
-            id1 = te[2 * j]; id2 = te[2 * j + 1];
+
+            id1 = trailing_edge[2 * k]; id2 = trailing_edge[2 * k + 1];
 
             p1.x = vertices[3 * id1]; p1.y = vertices[3 * id1 + 1]; p1.z = vertices[3 * id1 + 2];
             p2.x = vertices[3 * id2]; p2.y = vertices[3 * id2 + 1]; p2.z = vertices[3 * id2 + 2];
 
             vel = line_vortex(p, p1, p2);
 
-            c_kj_x[i * nte + j] = scale[j] * vel.x;
-            c_kj_y[i * nte + j] = scale[j] * vel.y;
-            c_kj_z[i * nte + j] = scale[j] * vel.z;
+            c_kj_x[i * nte + k] = vel.x;
+            c_kj_y[i * nte + k] = vel.y;
+            c_kj_z[i * nte + k] = vel.z;
         
         }
     }
 
 }
 
-void get_c_kj_dj_coefs(int nf,
-                       int nte,
-                       int nw,
-                       int section,
-                       int faces[],
-                       double vertices[],
-                       double areas[],
-                       double circulation[],
-                       double scale[],
-                       double p_ctrl[],
-                       double c_kj_x[], double c_kj_y[], double c_kj_z[],
-                       double d_j_x[], double d_j_y[], double d_j_z[])
-{
-    int i, j, k;
+// /*-------------------------------------------
+//     Calculate b_kj coefs
+// --------------------------------------------*/
+// void get_b_kj_coefs(int nf,
+//                     int nte,
+//                     int faces[],
+//                     double vertices[],
+//                     double scale[],
+//                     double p_ctrl[],
+//                     double b_kj_x[], double b_kj_y[], double b_kj_z[])
+// {
+//     int i, j;
 
-    int id1, id2, id3, id4;
+//     int id1, id2, id3, id4;
 
-    double area;
+//     Vec3D vel1, vel2, vel3, vel4;
+//     Vec3D p, p1, p2, p3, p4;
 
-    Vec3D vel1, vel2, vel3, vel4;
-    Vec3D p, p1, p2, p3, p4;
-    Vec3D v1, v2, v3;
+//     for (i = 0; i < nf; i++)
+//     {
 
-    for (i = 0; i < nf; i++)
-    {
+//         p.x = p_ctrl[3 * i];
+//         p.y = p_ctrl[3 * i + 1];
+//         p.z = p_ctrl[3 * i + 2];
 
-        p.x = p_ctrl[3 * i];
-        p.y = p_ctrl[3 * i + 1];
-        p.z = p_ctrl[3 * i + 2];
+//         for (j = 0; j < nte; j++)
+//         {
 
-        d_j_x[i] = 0.0;
-        d_j_y[i] = 0.0;
-        d_j_z[i] = 0.0;
+//             id1 = faces[j * 5 + 1]; id2 = faces[j * 5 + 2]; id3 = faces[j * 5 + 3];
+//             p1.x = vertices[3 * id1]; p1.y = vertices[3 * id1 + 1]; p1.z = vertices[3 * id1 + 2];
+//             p2.x = vertices[3 * id2]; p2.y = vertices[3 * id2 + 1]; p2.z = vertices[3 * id2 + 2];
+//             p3.x = vertices[3 * id3]; p3.y = vertices[3 * id3 + 1]; p3.z = vertices[3 * id3 + 2];
 
-        for (j = 0; j < nte; j++)
-        {
+//             if (faces[j * 5] == 3) {
+//                 vel1 = line_vortex(p, p1, p2);
+//                 vel2 = line_vortex(p, p2, p3);
+//                 vel3 = line_vortex(p, p3, p1);
+//                 vel4.x = 0.0; vel4.y = 0.0; vel4.z = 0.0;
+//             } else {
+//                 id4 = faces[j * 5 + 4];
+//                 p4.x = vertices[3 * id4]; p4.y = vertices[3 * id4 + 1]; p4.z = vertices[3 * id4 + 2];
+//                 vel1 = line_vortex(p, p1, p2);
+//                 vel2 = line_vortex(p, p2, p3);
+//                 vel3 = line_vortex(p, p3, p4);
+//                 vel4 = line_vortex(p, p4, p1);
+//             }
 
-            for (k = 0; k < section; k++)
-            {
+//             b_kj_x[i * nte + j] = scale[j] * (vel1.x + vel2.x + vel3.x + vel4.x);
+//             b_kj_y[i * nte + j] = scale[j] * (vel1.y + vel2.y + vel3.y + vel4.y);
+//             b_kj_z[i * nte + j] = scale[j] * (vel1.z + vel2.z + vel3.z + vel4.z);
+        
+//         }
+//     }
 
-                id1 = faces[j * (nw * 2) + k * 2];
-                id2 = faces[j * (nw * 2) + k * 2 + 1];
-                id3 = faces[j * (nw * 2) + (k + 1) * 2 + 1];
-                id4 = faces[j * (nw * 2) + (k + 1) * 2];
+// }
 
-                p1.x = vertices[3 * id1]; p1.y = vertices[3 * id1 + 1]; p1.z = vertices[3 * id1 + 2];
-                p2.x = vertices[3 * id2]; p2.y = vertices[3 * id2 + 1]; p2.z = vertices[3 * id2 + 2];
-                p3.x = vertices[3 * id3]; p3.y = vertices[3 * id3 + 1]; p3.z = vertices[3 * id3 + 2];
-                p4.x = vertices[3 * id4]; p4.y = vertices[3 * id4 + 1]; p4.z = vertices[3 * id4 + 2];
+// /*-------------------------------------------
+//     Calculate c_kj and d_j coefs
+// --------------------------------------------*/
+// void get_c_kj_vortex_line_coefs(int nf,
+//                                 int nte,
+//                                 int te[],
+//                                 double vertices[],
+//                                 double scale[],
+//                                 double p_ctrl[],
+//                                 double c_kj_x[], double c_kj_y[], double c_kj_z[])
+// {
+//     int i, j;
+
+//     int id1, id2;
+
+//     Vec3D vel;
+//     Vec3D p, p1, p2;
+
+//     for (i = 0; i < nf; i++)
+//     {
+
+//         p.x = p_ctrl[3 * i];
+//         p.y = p_ctrl[3 * i + 1];
+//         p.z = p_ctrl[3 * i + 2];
+
+//         for (j = 0; j < nte; j++)
+//         {
             
-                vel1 = line_vortex(p, p1, p2);
-                vel2 = line_vortex(p, p2, p3);
-                vel3 = line_vortex(p, p3, p4);
-                vel4 = line_vortex(p, p4, p1);
+//             id1 = te[2 * j]; id2 = te[2 * j + 1];
 
-                if (k == 0) {
+//             p1.x = vertices[3 * id1]; p1.y = vertices[3 * id1 + 1]; p1.z = vertices[3 * id1 + 2];
+//             p2.x = vertices[3 * id2]; p2.y = vertices[3 * id2 + 1]; p2.z = vertices[3 * id2 + 2];
 
-                    c_kj_x[i * nte + j] = scale[j] * (vel1.x + vel2.x + vel3.x + vel4.x);
-                    c_kj_y[i * nte + j] = scale[j] * (vel1.y + vel2.y + vel3.y + vel4.y);
-                    c_kj_z[i * nte + j] = scale[j] * (vel1.z + vel2.z + vel3.z + vel4.z);
+//             vel = line_vortex(p, p1, p2);
 
-                } else {
-
-                    v1.x = p2.x - p1.x; v1.y = p2.y - p1.y; v1.z = p2.z - p1.z;
-                    v2.x = p3.x - p1.x; v2.y = p3.y - p1.y; v2.z = p3.z - p1.z;
-                    v3.x = p4.x - p1.x; v3.y = p4.y - p1.y; v3.z = p4.z - p1.z;
-
-                    area = 0.5 * (norm_func(cross_func(v1, v2)) + norm_func(cross_func(v2, v3)));
-
-                    d_j_x[i] = d_j_x[i] + (circulation[j * nw + k] * areas[j * nw + k] / area) * scale[j] * (vel1.x + vel2.x + vel3.x + vel4.x);
-                    d_j_y[i] = d_j_y[i] + (circulation[j * nw + k] * areas[j * nw + k] / area) * scale[j] * (vel1.y + vel2.y + vel3.y + vel4.y);
-                    d_j_z[i] = d_j_z[i] + (circulation[j * nw + k] * areas[j * nw + k] / area) * scale[j] * (vel1.z + vel2.z + vel3.z + vel4.z);
-                
-                }
-
-            }
+//             c_kj_x[i * nte + j] = scale[j] * vel.x;
+//             c_kj_y[i * nte + j] = scale[j] * vel.y;
+//             c_kj_z[i * nte + j] = scale[j] * vel.z;
         
-        }
-    }
+//         }
+//     }
 
-}
+// }
 
-/*-------------------------------------------
-    Point velocity
---------------------------------------------*/
+// void get_c_kj_dj_coefs(int nf,
+//                        int nte,
+//                        int nw,
+//                        int section,
+//                        int faces[],
+//                        double vertices[],
+//                        double areas[],
+//                        double circulation[],
+//                        double scale[],
+//                        double p_ctrl[],
+//                        double c_kj_x[], double c_kj_y[], double c_kj_z[],
+//                        double d_j_x[], double d_j_y[], double d_j_z[])
+// {
+//     int i, j, k;
+
+//     int id1, id2, id3, id4;
+
+//     double area;
+
+//     Vec3D vel1, vel2, vel3, vel4;
+//     Vec3D p, p1, p2, p3, p4;
+//     Vec3D v1, v2, v3;
+
+//     for (i = 0; i < nf; i++)
+//     {
+
+//         p.x = p_ctrl[3 * i];
+//         p.y = p_ctrl[3 * i + 1];
+//         p.z = p_ctrl[3 * i + 2];
+
+//         d_j_x[i] = 0.0;
+//         d_j_y[i] = 0.0;
+//         d_j_z[i] = 0.0;
+
+//         for (j = 0; j < nte; j++)
+//         {
+
+//             for (k = 0; k < section; k++)
+//             {
+
+//                 id1 = faces[j * (nw * 2) + k * 2];
+//                 id2 = faces[j * (nw * 2) + k * 2 + 1];
+//                 id3 = faces[j * (nw * 2) + (k + 1) * 2 + 1];
+//                 id4 = faces[j * (nw * 2) + (k + 1) * 2];
+
+//                 p1.x = vertices[3 * id1]; p1.y = vertices[3 * id1 + 1]; p1.z = vertices[3 * id1 + 2];
+//                 p2.x = vertices[3 * id2]; p2.y = vertices[3 * id2 + 1]; p2.z = vertices[3 * id2 + 2];
+//                 p3.x = vertices[3 * id3]; p3.y = vertices[3 * id3 + 1]; p3.z = vertices[3 * id3 + 2];
+//                 p4.x = vertices[3 * id4]; p4.y = vertices[3 * id4 + 1]; p4.z = vertices[3 * id4 + 2];
+            
+//                 vel1 = line_vortex(p, p1, p2);
+//                 vel2 = line_vortex(p, p2, p3);
+//                 vel3 = line_vortex(p, p3, p4);
+//                 vel4 = line_vortex(p, p4, p1);
+
+//                 if (k == 0) {
+
+//                     c_kj_x[i * nte + j] = scale[j] * (vel1.x + vel2.x + vel3.x + vel4.x);
+//                     c_kj_y[i * nte + j] = scale[j] * (vel1.y + vel2.y + vel3.y + vel4.y);
+//                     c_kj_z[i * nte + j] = scale[j] * (vel1.z + vel2.z + vel3.z + vel4.z);
+
+//                 } else {
+
+//                     v1.x = p2.x - p1.x; v1.y = p2.y - p1.y; v1.z = p2.z - p1.z;
+//                     v2.x = p3.x - p1.x; v2.y = p3.y - p1.y; v2.z = p3.z - p1.z;
+//                     v3.x = p4.x - p1.x; v3.y = p4.y - p1.y; v3.z = p4.z - p1.z;
+
+//                     area = 0.5 * (norm_func(cross_func(v1, v2)) + norm_func(cross_func(v2, v3)));
+
+//                     d_j_x[i] = d_j_x[i] + (circulation[j * nw + k] * areas[j * nw + k] / area) * scale[j] * (vel1.x + vel2.x + vel3.x + vel4.x);
+//                     d_j_y[i] = d_j_y[i] + (circulation[j * nw + k] * areas[j * nw + k] / area) * scale[j] * (vel1.y + vel2.y + vel3.y + vel4.y);
+//                     d_j_z[i] = d_j_z[i] + (circulation[j * nw + k] * areas[j * nw + k] / area) * scale[j] * (vel1.z + vel2.z + vel3.z + vel4.z);
+                
+//                 }
+
+//             }
+        
+//         }
+//     }
+
+// }
+
+// /*-------------------------------------------
+//     Point velocity
+// --------------------------------------------*/
