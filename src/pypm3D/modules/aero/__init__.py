@@ -1,1 +1,1 @@
-from pypm3D.modules.aero.external import solve
+from pypm3D.modules.aero.core.solve import solve

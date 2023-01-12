@@ -1,14 +1,24 @@
 import numpy as np
 import functools as ft
 
-from pypm3D.models import MeshModel
+from pypm3D.models.mesh_model import MeshModel
 from pypm3D.modules.mesh.utils import (find_faces_at_trailing_edge,
-                                       calculate_panels_parameters)
+                                       calculate_panels_parameters,
+                                       correct_trailing_edge_faces)
 
 def proc_mesh(vertices: np.ndarray,
               faces: np.ndarray,
               trailing_edge: np.ndarray) -> MeshModel:
-    """Process mesh"""
+    """
+    Process mesh. The longitudinal axis must be align with the x axis,
+    and the span must be align with the y axis.
+
+    Parameters:
+    -----------
+    - vertices: points in space [x, y, z]
+    - faces: number of sides and vertices ids [n, id1, id2, id3, id4]
+    - trailing_edge: vertices that makes an edge [id1, id2]
+    """
 
     # Wrappers
     def _add_trailing_edge_ids(mesh: MeshModel, index: int, id1: int, id2: int) -> None:
@@ -27,6 +37,10 @@ def proc_mesh(vertices: np.ndarray,
         mesh.surface.p3[:, :] = p3[:, :]
         mesh.surface.p4[:, :] = p4[:, :]
         return
+    
+    def _correct_trailing_edge_faces_ids(mesh: MeshModel, trailing_edge_faces: np.ndarray) -> None:
+        mesh.surface.trailing_edge_faces[:, :] = trailing_edge_faces
+        return
 
     # Create mesh
     mesh = MeshModel()
@@ -40,5 +54,8 @@ def proc_mesh(vertices: np.ndarray,
 
     func = ft.partial(_add_face_parameters, mesh)
     calculate_panels_parameters.main(mesh.surface.nf, mesh.surface.vertices, mesh.surface.faces, mesh.surface.trailing_edge, mesh.surface.trailing_edge_faces, func)
+
+    func = ft.partial(_correct_trailing_edge_faces_ids, mesh)
+    correct_trailing_edge_faces.main(mesh.surface.trailing_edge_faces, mesh.surface.e3, func)
 
     return mesh

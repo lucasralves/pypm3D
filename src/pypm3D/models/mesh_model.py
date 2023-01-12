@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 import math
+import typing as tp
 import numpy as np
+
 
 @dataclass
 class SurfaceMeshModel:
@@ -123,13 +125,11 @@ class MeshModel:
 
         return
     
-    def init_wake(self, trailing_edge: np.ndarray,
-                        surface_vertices: np.ndarray,
-                        u_ref: np.ndarray,
+    def init_wake(self, u_func: tp.Callable[[np.ndarray], np.ndarray],
                         length: float,
                         time_step: float) -> None:
 
         self.wake = WakeMeshModel()
-        self.wake.init(trailing_edge, surface_vertices, u_ref, length, time_step)
+        self.wake.init(self.surface.trailing_edge, self.surface.vertices, u_func(np.mean(self.surface.vertices, axis=0)), length, time_step)
 
         return
