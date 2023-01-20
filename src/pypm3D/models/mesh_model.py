@@ -13,7 +13,8 @@ class SurfaceMeshModel:
     faces: np.ndarray = None                # number of sides and vertices ids [n, id1, id2, id3, id4]
     trailing_edge: np.ndarray = None        # vertices that makes an edge [id1, id2]
     p_avg: np.ndarray = None                # center of panel
-    p_ctrl: np.ndarray = None               # control point
+    p_ctrl_plus: np.ndarray = None          # control point
+    p_ctrl_minus: np.ndarray = None         # control point
     e1: np.ndarray = None                   # orthogonal base
     e2: np.ndarray = None                   # orthogonal base
     e3: np.ndarray = None                   # orthogonal base
@@ -36,7 +37,8 @@ class SurfaceMeshModel:
         self.trailing_edge: np.ndarray = np.copy(trailing_edge.astype(np.int32))
 
         self.p_avg = np.empty((self.nf, 3), dtype=np.double)
-        self.p_ctrl = np.empty((self.nf, 3), dtype=np.double)
+        self.p_ctrl_plus = np.empty((self.nf, 3), dtype=np.double)
+        self.p_ctrl_minus = np.empty((self.nf, 3), dtype=np.double)
         self.e1 = np.empty((self.nf, 3), dtype=np.double)
         self.e2 = np.empty((self.nf, 3), dtype=np.double)
         self.e3 = np.empty((self.nf, 3), dtype=np.double)
@@ -104,7 +106,7 @@ class WakeMeshModel:
                 self.faces[i + j * self.nte, 4] = id1 + (j + 1) * self.nv_te
         
         # Create wake parameters
-        self.areas = np.empty((self.nte, self.nw), dtype=np.double)
+        self.areas = np.empty((self.nte * self.nw), dtype=np.double)
 
         # Time step
         self.time_step = time_step

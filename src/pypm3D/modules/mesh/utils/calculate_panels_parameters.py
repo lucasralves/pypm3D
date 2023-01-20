@@ -11,7 +11,8 @@ def main(nf: int,
 
     # Create parameters
     p_avg = np.empty((nf, 3), dtype=np.double)
-    p_ctrl = np.empty((nf, 3), dtype=np.double)
+    p_ctrl_plus = np.empty((nf, 3), dtype=np.double)
+    p_ctrl_minus = np.empty((nf, 3), dtype=np.double)
     e1 = np.empty((nf, 3), dtype=np.double)
     e2 = np.empty((nf, 3), dtype=np.double)
     e3 = np.empty((nf, 3), dtype=np.double)
@@ -73,7 +74,8 @@ def main(nf: int,
     e3[:, 2] = e3[:, 2] / aux_norm
 
     # Control point
-    p_ctrl[:, :] = p_avg[:, :] + e3[:, :] * 1e-8
+    p_ctrl_plus[:, :] = p_avg[:, :] + e3[:, :] * 1e-12
+    p_ctrl_minus[:, :] = p_avg[:, :] - e3[:, :] * 1e-12
 
     # Local vertices
     aux_vec = vertices[faces[:, 1], :] - p_avg
@@ -93,6 +95,6 @@ def main(nf: int,
     p4[quad_panel_ids, 1] = e2[quad_panel_ids, 0] * aux_vec[:, 0] + e2[quad_panel_ids, 1] * aux_vec[:, 1] + e2[quad_panel_ids, 2] * aux_vec[:, 2]
 
     # Save
-    func(p_avg, p_ctrl, e1, e2, e3, p1, p2, p3, p4)
+    func(p_avg, p_ctrl_plus, p_ctrl_minus, e1, e2, e3, p1, p2, p3, p4)
 
     return

@@ -13,16 +13,15 @@ def main(nf: int,
          p2: np.ndarray,
          p3: np.ndarray,
          p4: np.ndarray,
-         source: np.ndarray,
-         a_j: np.ndarray) -> None:
+         a_ij: np.ndarray,
+         b_ij: np.ndarray) -> None:
     
-    a_j_x = np.empty((nf,), dtype=np.double)
-    a_j_y = np.empty((nf,), dtype=np.double)
-    a_j_z = np.empty((nf,), dtype=np.double)
-    
+    a_ij_aux = np.empty((nf * nf), dtype=np.double)
+    b_ij_aux = np.empty((nf * nf), dtype=np.double)
+
     lib = ct.CDLL('./src/pypm3D/modules/aero/utils/bin/lib.so')
 
-    lib.get_a_j_coefs.argtypes = [
+    lib.set_surface_coefs.argtypes = [
         ct.c_int,                         # nf
         ct.POINTER(ct.c_int),             # n_sides
         ct.POINTER(ct.c_double),          # p_avg
@@ -34,15 +33,13 @@ def main(nf: int,
         ct.POINTER(ct.c_double),          # p2
         ct.POINTER(ct.c_double),          # p3
         ct.POINTER(ct.c_double),          # p4
-        ct.POINTER(ct.c_double),          # source
-        ct.POINTER(ct.c_double),          # a_j_x
-        ct.POINTER(ct.c_double),          # a_j_y
-        ct.POINTER(ct.c_double),          # a_j_z
+        ct.POINTER(ct.c_double),          # a_ij
+        ct.POINTER(ct.c_double),          # b_ij
     ]
 
-    lib.get_a_j_coefs.restype = None
+    lib.set_surface_coefs.restype = None
 
-    lib.get_a_j_coefs(
+    lib.set_surface_coefs(
         nf,
         np.ctypeslib.as_ctypes(np.asarray([x for x in n_sides])),
         np.ctypeslib.as_ctypes(p_avg.reshape(p_avg.size)),
@@ -54,14 +51,11 @@ def main(nf: int,
         np.ctypeslib.as_ctypes(p2.reshape(p2.size)),
         np.ctypeslib.as_ctypes(p3.reshape(p3.size)),
         np.ctypeslib.as_ctypes(p4.reshape(p4.size)),
-        np.ctypeslib.as_ctypes(source),
-        np.ctypeslib.as_ctypes(a_j_x),
-        np.ctypeslib.as_ctypes(a_j_y),
-        np.ctypeslib.as_ctypes(a_j_z)
+        np.ctypeslib.as_ctypes(a_ij_aux),
+        np.ctypeslib.as_ctypes(b_ij_aux),
     )
 
-    a_j[:, 0] = a_j_x[:]
-    a_j[:, 1] = a_j_y[:]
-    a_j[:, 2] = a_j_z[:]
-
+    a_ij[:, :] = a_ij_aux.reshape((nf, nf))[:, :]
+    b_ij[:, :] = b_ij_aux.reshape((nf, nf))[:, :]
+    
     return

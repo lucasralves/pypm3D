@@ -26,9 +26,10 @@ def proc_mesh(vertices: np.ndarray,
         mesh.surface.trailing_edge_faces[index, 1] = id2
         return
 
-    def _add_face_parameters(mesh: MeshModel, p_avg: np.ndarray, p_ctrl: np.ndarray, e1: np.ndarray, e2: np.ndarray, e3: np.ndarray, p1: np.ndarray, p2: np.ndarray, p3: np.ndarray, p4: np.ndarray) -> None:
+    def _add_face_parameters(mesh: MeshModel, p_avg: np.ndarray, p_ctrl_plus: np.ndarray, p_ctrl_minus: np.ndarray, e1: np.ndarray, e2: np.ndarray, e3: np.ndarray, p1: np.ndarray, p2: np.ndarray, p3: np.ndarray, p4: np.ndarray) -> None:
         mesh.surface.p_avg[:, :] = p_avg[:, :]
-        mesh.surface.p_ctrl[:, :] = p_ctrl[:, :]
+        mesh.surface.p_ctrl_plus[:, :] = p_ctrl_plus[:, :]
+        mesh.surface.p_ctrl_minus[:, :] = p_ctrl_minus[:, :]
         mesh.surface.e1[:, :] = e1[:, :]
         mesh.surface.e2[:, :] = e2[:, :]
         mesh.surface.e3[:, :] = e3[:, :]

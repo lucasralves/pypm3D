@@ -1,1 +1,2 @@
-from pypm3D.modules.posproc.external import create_vtp_file
+from pypm3D.modules.posproc.core.create_vtp_file import create_vtp_file
+from pypm3D.modules.posproc.core.forces_and_moments import forces_and_moments
