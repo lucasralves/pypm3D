@@ -294,7 +294,7 @@ def rectangular_wing(th: float, span: float, n_span: int, n_chord: int, show: bo
 #---------------------------------------#
 def u_call(x: np.ndarray) -> np.ndarray:
     """Freestream velocity at a point x"""
-    alpha = 5.0
+    alpha = 10.0
     return np.array([np.cos(np.deg2rad(alpha)), .0, np.sin(np.deg2rad(alpha))])
 
 
