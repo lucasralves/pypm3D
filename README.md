@@ -38,7 +38,8 @@ Create mesh parameters
 pypm3D.proc_mesh(vt, fc, te, u_call, l, ts)
 
 """
-Solve the source/doublet distribution and calculate the surface parameters
+Solve the source/doublet distribution and
+calculate the surface parameters
 """
 pypm3D.solve(u_call)
 
@@ -57,12 +58,17 @@ Contain all vertices.
 vt = np.array([[x_1, y_1, z_1], ...], dtype=np.double)
 
 """
-Contain the vertices ids that make a face. The ids must be ordered in a way that the face is posisitive oriented. The first parameter n's, is the number of sides that must be 3 or 4. If n == 3, then the last id (id4) will be replaced by -1.
+Contain the vertices ids that make a face. The ids
+must be ordered in a way that the face is posisitive
+oriented. The first parameter n's, is the number of
+sides that must be 3 or 4. If n == 3, then the last
+id (id4) will be replaced by -1.
 """
 fc = np.array([[n1, id1, id2, id3, id4], ...], dtype=np.int32)
 
 """
-Contain the pair of vertices ids that make an edge located at the trailing edge.
+Contain the pair of vertices ids that make an edge
+located at the trailing edge.
 """
 te = np.array([[id1, id2], ...], dtype=np.int32)
 ```
@@ -91,7 +97,7 @@ The Figures below were generated based on the scripts in 'examples' folder and v
 
 ### Wind Turbine
 
-<img src="doc/wind_turbine.png" alt="drawing" width="70%"/>
+<img src="doc/wind_turbine.png" alt="drawing" width="40%"/>
 
 ## References
 
