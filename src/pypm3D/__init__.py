@@ -10,7 +10,7 @@ def init() -> None:
     """
     pypm3D.init()
 
-    Initialize _Case class. This must be called before any call to the other
+    Initialize global parameters. This must be called before any call to the other
     functions.
     """
     
